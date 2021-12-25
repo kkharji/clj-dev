@@ -1,4 +1,4 @@
-# libtam/devenv
+# Devenv
 
 Library for setting up development environment (e.g. watching source code, running tests ..).
 Mostly used to quickly setup my development environment with/without integrant/duct.
@@ -23,7 +23,7 @@ Mostly used to quickly setup my development environment with/without integrant/d
 
 ```clojure
 (ns user
- (:require [libtam.devenv :as devenv]
+ (:require [tami5.devenv :as devenv]
            [potemkin :as potemkin]))
 
 (potemkin/import-vars ;; make it accessible in user.clj namespace
