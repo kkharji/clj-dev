@@ -1,5 +1,10 @@
 {:paths ["src" "resources"]
- :deps {org.clojure/clojure {:mvn/version "1.10.3"}}
+ :deps {org.clojure/clojure {:mvn/version "1.10.3"}
+        integrant/integrant {:mvn/version "0.8.0"}
+        duct/core           {:mvn/version "0.8.0"}
+        potemkin/potemkin   {:mvn/version "0.4.5"}
+        org.clojure/tools.namespace {:mvn/version "1.2.0"}
+        integrant/repl              {:mvn/version "0.3.2"}}
  :aliases
  {:build {:deps {io.github.seancorfield/build-clj
                  {:git/tag "v0.4.0" :git/sha "54e39ae"}}
