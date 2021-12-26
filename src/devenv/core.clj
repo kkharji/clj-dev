@@ -8,7 +8,7 @@
             [potemkin :as potemkin]))
 
 ;; re-export (system & config) intergrant state
-(declare system config)
+(declare system config start)
 (potemkin/import-vars [ig-state system config])
 
 ;; Stop this namespace from being reloaded.
@@ -29,7 +29,7 @@
     :watch/formatter nil
 
     :env/paths ["src" "test" "dev" "resources" "dev/src" "dev/resources"]
-    :env/auto-start? false
+    :env/start-on-init? false
     :env/load-runtime? false
     :env/duct? false
     :env/integrant? false
@@ -69,13 +69,16 @@
   ([] (init nil))
   ([config]
    (let [{:integrant/keys [file-path with-duct?]
+          :env/keys [start-on-init?]
           :watch/keys [timestamp] :as s} (merge-state! config)]
      (merge-state!
       {:dev/integrant? (some? file-path)
        :dev/duct? (and with-duct? file-path)
        :dev/local-clj (io/resource "local.clj")
        :watch/paths #(or (:watch/paths s) (:env/paths s))
-       :watch/formatter (get-time-formatter timestamp)}))))
+       :watch/formatter (get-time-formatter timestamp)})
+     (when start-on-init?
+       (start)))))
 
 (defn start
   "Start development environment:
@@ -99,6 +102,7 @@
         (ig-repl/set-prep! ig-prep-fn)
         (ig-repl/init)
         (ig-repl/go))
+      (swap! state assoc :env/started? true)
       (notify :environment/started!))))
 
 (defn pause
