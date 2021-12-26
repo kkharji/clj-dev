@@ -1,0 +1,1 @@
+{:lint-as {devenv.state/alt clojure.core/alter-var-root}}

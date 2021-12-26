@@ -1,12 +1,13 @@
 (ns devenv.core
   (:require [clojure.test :refer [are run-tests]]
             [clojure.java.io :as io]
-            [clojure.tools.namespace.repl :as tn]
+            [clojure.tools.namespace.repl :as repl]
             [integrant.repl.state]
-            [integrant.repl :as ig-repl]
+            [integrant.repl :as igr]
             [duct.core :as duct]
             [potemkin :as potemkin]
-            [hawk.core :as hawk]))
+            [hawk.core :as hawk]
+            [devenv.state :as s :refer [alt]]))
 
 ;; re-export (system & config) intergrant state
 (declare system config start watch pause)
@@ -14,88 +15,40 @@
  [integrant.repl.state system config])
 
 ;; Stop this namespace from being reloaded.
-(tn/disable-reload! (find-ns 'devenv.core))
-
-;; Set Initial State
-(def ^:private state
-  (atom
-   {:integrant/profiles nil
-    :integrant/file-path nil
-    :integrant/with-duct? false
-    :integrant/initialized? false
-
-    :watch/paths nil
-    :watch/handle nil
-    :watch/formatter nil
-    :watch/pattern #"[^.].*(\.clj|\.edn)$"
-    :watch/timestamp "[hh:mm:ss]"
-    :watch/initialized? false
-
-    :env/first-start? true
-    :env/paths ["src" "test" "dev" "resources" "dev/src" "dev/resources"]
-    :env/start-on-init? false
-    :env/duct? false
-    :env/integrant? false
-    :env/local-clj false
-    :env/started? false}))
-
-(def ^:private merge-state!
-  (partial swap! state merge))
-
-(defn ^:private get-time-formatter [timestamp]
-  (when timestamp (java.text.SimpleDateFormat. timestamp)))
+(repl/disable-reload!
+ (find-ns 'devenv.core))
 
 (defn ^:private notify [key]
-  (when-let [formatter (@state :watch/formatter)]
-    (println key (.format formatter (java.util.Date.)))))
+  (when key
+    (when-let [t (some-> (s/config :watch/timestamp)
+                         (java.text.SimpleDateFormat.)
+                         (.format (java.util.Date.)))]
+      (println key t))))
 
 (defn ^:private ig-prep-fn []
-  (let [{:integrant/keys [file-path profiles] :env/keys [duct?]} @state
-        resource (io/resource file-path)]
-    (if duct?
+  (let [resource (-> :integrant/file-path s/config io/resource)]
+    (if s/duct?
       (-> resource
           (duct/read-config)
-          (duct/prep-config profiles))
+          (duct/prep-config (s/config :integrant/profiles)))
       (slurp resource))))
-
-(defn ^:private get-watch-handler [pattern paths]
-  (letfn [(filter [_ {:keys [file]}]
-            (re-matches pattern (.getName file)))
-          (on-change []
-            (pause :watch/reload!)
-            (tn/refresh :after 'devenv.core/resume))
-          (handler [ctx _]
-            (binding [*ns* *ns*] (on-change) ctx))]
-    (hawk/watch! [{:paths paths :filter filter :handler handler}])))
-
-(def ^:private update-watch-handle
-  (partial swap! state assoc :watch/handle))
 
 (defn init
   "Process user options and prepare dev environment:
   if no configuration is given, then defaults will be used."
-  {:test
-   #(are [lhs rhs] [lhs (some? (get (init rhs) (first lhs)))]
-      [:env/integrant? true] {:integrant/file-path "..."}
-      [:env/duct? true] {:integrant/with-duct? true :integrant/file-path "...."}
-      [:env/duct? false] {:integrant/with-duct? true}
-      [:watch/paths true] nil)}
+  {:test #(are [lhs rhs] [lhs (some? (get (init rhs) (first lhs)))]
+            [:env/integrant? true] {:integrant/file-path "..."}
+            [:env/duct? true] {:integrant/with-duct? true :integrant/file-path "...."}
+            [:env/duct? false] {:integrant/with-duct? true}
+            [:watch/paths true] nil)}
   ([] (init nil))
   ([config]
-   (let [{:integrant/keys [file-path with-duct?]
-          :env/keys [start-on-init?] :as s} (merge-state! config)
-         integrant? (some? file-path)]
-     (merge-state!
-      {:env/integrant? integrant?
-       :env/duct? (and with-duct? integrant?)
-       :env/initialized? true
-       :env/local-clj (io/resource "local.clj")
-       :watch/paths #(or (:watch/paths s) (:env/paths s))
-       :watch/formatter (get-time-formatter (s :watch/timestamp))})
-     (when integrant? (ig-repl/set-prep! ig-prep-fn))
-     (apply tn/set-refresh-dirs (:env/paths s))
+   (let [{:keys [env/paths]} (s/set-state! config)]
+     (when s/integrant? (igr/set-prep! ig-prep-fn))
+     (apply repl/set-refresh-dirs paths)
      (notify :environment/initialized!)
-     (when start-on-init? (start)))))
+     (when s/start-on-init? (start))
+     s/config)))
 
 (defn start
   "Start development environment:
@@ -110,17 +63,16 @@
   ([start-watch?]
    (start :environment/started! start-watch?))
   ([msg-key start-watch?]
-   (when-not (:env/started? @state)
-     (when-not (:env/initialized? @state)
-       (init))
-     (let [{:env/keys [duct? integrant? local-clj]} @state]
-       (when duct? (duct/load-hierarchy))
-       (tn/refresh-all)
-       (when integrant? (ig-repl/init) (ig-repl/go))
-       (when local-clj (load local-clj))
-       (swap! state assoc {:env/started? true})
-       (when start-watch? (watch :start))
-       (notify msg-key)))))
+   (if-not s/started?
+     (do (when-not s/initialized? (init))
+         (when s/duct? (duct/load-hierarchy))
+         (repl/refresh-all)
+         (when s/integrant? (igr/init) (igr/go))
+         (some-> (io/resource "local.clj") (load))
+         (s/toggle-start!)
+         (when start-watch? (watch :start))
+         (notify msg-key))
+     (notify :environment/already-started!))))
 
 (defn stop
   "Stop development environment. clear state"
@@ -129,12 +81,12 @@
   ([stop-watch?]
    (stop :environment/stoped! stop-watch?))
   ([msg-key stop-watch?]
-   (let [{:keys [env/integrant? env/started? watch/handle]} @state]
-     (if started?
-       (do (when integrant?  (ig-repl/halt))
-           (when (and stop-watch? handle) (watch :stop))
-           (swap! state assoc :env/started? false)
-           (tn/clear)
+   (let [watch? (and stop-watch? s/watching?)]
+     (if s/started?
+       (do (when s/integrant? (igr/halt))
+           (when watch? (watch :stop))
+           (s/toggle-start!)
+           (repl/clear)
            (when msg-key (notify msg-key)))
        (when msg-key (notify :environment/already-stopped!))))))
 
@@ -151,51 +103,54 @@
   ([]
    (pause :environment/paused!))
   ([msg-key]
-   (let [{:env/keys [integrant? started?]} @state]
-     (if started?
-       (do (when integrant? (ig-repl/suspend))
-           (swap! state assoc :env/paused? true)
-           (when msg-key (notify msg-key)))
-       (notify :environment/run-start-first)))))
+   (if s/started?
+     (do (when s/integrant? (igr/suspend))
+         (alt s/paused? true)
+         (when msg-key (notify msg-key)))
+     (notify :environment/run-start-first))))
 
 (defn resume
   "Resume after pausing environment."
   ([]
    (resume :environment/resumed!))
   ([msg-key]
-   (let [{:keys [env/integrant? env/paused?]} @state]
-     (if paused?
-       (do (when integrant? (ig-repl/resume))
-           (when msg-key (notify msg-key)))
-       (notify :environment/run-pause-first)))))
+   (if s/paused?
+     (do (when s/integrant? (igr/resume))
+         (when msg-key (notify msg-key)))
+     (notify :environment/run-pause-first))))
 
 (defn refresh
   "Runs pause and then resume, while in the same running refreshing files with
-  clojrue.tools.namespace/refresh"
+  clojrue.tools.namespace/refresh."
   []
-  (if (@state :env/started?)
+  (if s/started?
     (do (pause nil)
-        (tn/refresh)
+        (repl/refresh)
         (resume :environment/refreshed!))
     (notify :environment/run-start-first)))
+
+(defn ^:private on-change []
+  (pause :watch/reload!)
+  (repl/refresh :after 'devenv.core/resume))
 
 (defn watch
   "Start/Stop hot-reloading. To stop, pass :stop to watch"
   ([] (watch :start))
   ([op]
-   (let [{:watch/keys [handle pattern paths] :env/keys [started?]} @state
-         [start? stop?] [(= op :start) (= op :stop)]
-         case* (cond (and handle stop?) :stop
-                     (and (not handle) start?) :start
-                     (and (not handle) stop?) :environment/no-watching-process
-                     (and handle start?) :environment/already-watching!!)]
-     (case case*
-       :start (do (when-not started? (start))
-                  (update-watch-handle (get-watch-handler pattern paths))
-                  (notify :environment/watching!))
-       :stop  (do (hawk/stop! handle)
-                  (update-watch-handle nil)
-                  (notify :environment/stopped-watching!))
-       (notify case*)))))
+   (let [[start? stop?] [(= op :start) (= op :stop)]
+         watching? s/watching?
+         start (and start? (not watching?))
+         stop  (and stop? watching?)]
+     (cond
+       start (do (when-not s/started? (start))
+                 (s/set-watch-handle! on-change)
+                 (notify :environment/watching!))
+       stop  (do (hawk/stop! s/watch-handle)
+                 (s/set-watch-handle! nil)
+                 (notify :environment/stopped-watching!))
+       :else (notify
+              (if start?
+                :environment/already-watching!!
+                :environment/no-watching-process))))))
 
 (run-tests)
