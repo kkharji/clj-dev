@@ -6,7 +6,6 @@
   (atom
    {:integrant/profiles nil
     :integrant/file-path nil
-    :integrant/prep nil
     :integrant/with-duct? false
 
     :watch/active? false
@@ -14,14 +13,21 @@
     :watch/handle nil
     :watch/pattern #"[^.].*(\.clj|\.edn)$"
     :watch/timestamp "[hh:mm:ss]"
+    :watch/formatter nil
 
     :env/paths ["src" "test" "dev" "resources" "dev/src" "dev/resources"]
+    :env/auto-start? false
+    :env/load-runtime? false
     :env/duct? false
     :env/integrant? false
-    :env/local-clj? false
+    :env/local-clj false
     :env/started? false}))
 
-(def ^:private merge-state! (partial swap! state merge))
+(def ^:private merge-state!
+  (partial swap! state merge))
+
+(defn ^:private get-time-formatter [timestamp]
+  (when timestamp (java.text.SimpleDateFormat. timestamp)))
 
 (defn init
   "Process user options and prepare dev environment:
@@ -31,23 +37,23 @@
       [:dev/integrant? true] {:integrant/file-path "..."}
       [:dev/duct? true] {:integrant/with-duct? true :integrant/file-path "...."}
       [:dev/duct? false] {:integrant/with-duct? true}
-      [:integrant/prep true] {:integrant/prep (fn [] (println "prep integrant"))}
       [:watch/paths true] nil)}
   ([] (init nil))
   ([config]
-   (let [s (merge-state! config)]
+   (let [{:integrant/keys [file-path with-duct?]
+          :watch/keys [timestamp] :as s} (merge-state! config)]
      (merge-state!
-      {:dev/integrant? (some? (s :file-path))
-       :dev/duct? (and (s :with-duct?) (s :file-path))
-       :dev/local-clj? (io/resource "local.clj")
-       :watch/paths #(or (:watch/paths s) (:env/paths s))}))))
+      {:dev/integrant? (some? file-path)
+       :dev/duct? (and with-duct? file-path)
+       :dev/local-clj (io/resource "local.clj")
+       :watch/paths #(or (:watch/paths s) (:env/paths s))
+       :watch/formatter (get-time-formatter timestamp)}))))
 
 (defn start
   "Start development environment:
   - set clojure.tools.namespace.repl/refresh-dirs.
   - integrant?, run integrant.core/set-prep!
   - integrant?, read configuration in integrant.core/set-prep!
-  - integrant? and :integrant/prep, execute in integrant.core/set-prep!
   - duct?, read configuration and prepare with profiles
   - local-clj?, execute it "
   [])

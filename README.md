@@ -19,7 +19,6 @@ Mostly used to quickly setup my development environment with/without integrant/d
  :watch/timestamp "[hh:mm:ss]" ;; Set to nil if you don't want have timestamp with each library action.
 
  ;; Integrant/Duct Configuration
- :integrant/prep nil ;; A function that would be executed within integrant.repl/set-prep!
  :integrant/file-path nil ;; integrant file configuration path within runtime paths.
  :integrant/profiles nil ;; integrant profiles.
  :integrant/with-duct? nil} ;; whether duct framework is used
