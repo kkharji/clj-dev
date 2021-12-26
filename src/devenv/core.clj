@@ -1,4 +1,4 @@
-(ns tami5.devenv
+(ns devenv.core
   (:require [clojure.test :refer [are run-tests]]
             [clojure.java.io :as io]
             [clojure.tools.namespace.repl :as tn]
@@ -10,10 +10,9 @@
 ;; re-export (system & config) intergrant state
 (declare system config)
 (potemkin/import-vars [ig-state system config])
-ig-state/system
 
 ;; Stop this namespace from being reloaded.
-(tn/disable-reload! (find-ns 'tami5.devenv))
+(tn/disable-reload! (find-ns 'devenv.core))
 
 ;; Set Initial State
 (def ^:private state

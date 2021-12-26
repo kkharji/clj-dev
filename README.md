@@ -30,7 +30,7 @@ Mostly used to quickly setup my development environment with/without integrant/d
 
 ```clojure
 (ns user
- (:require [tami5.devenv :as devenv]
+ (:require [devenv.core :as devenv]
            [potemkin :as potemkin]))
 
 (potemkin/import-vars ;; make it accessible in user.clj namespace
