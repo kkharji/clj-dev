@@ -2,14 +2,16 @@
   (:require [clojure.test :refer [are run-tests]]
             [clojure.java.io :as io]
             [clojure.tools.namespace.repl :as tn]
-            [integrant.repl.state :as ig-state]
+            [integrant.repl.state]
             [integrant.repl :as ig-repl]
             [duct.core :as duct]
-            [potemkin :as potemkin]))
+            [potemkin :as potemkin]
+            [hawk.core :as hawk]))
 
 ;; re-export (system & config) intergrant state
-(declare system config start)
-(potemkin/import-vars [ig-state system config])
+(declare system config start watch)
+(potemkin/import-vars
+ [integrant.repl.state system config])
 
 ;; Stop this namespace from being reloaded.
 (tn/disable-reload! (find-ns 'devenv.core))
@@ -20,14 +22,15 @@
    {:integrant/profiles nil
     :integrant/file-path nil
     :integrant/with-duct? false
+    :integrant/initialized? false
 
-    :watch/active? false
     :watch/paths nil
     :watch/handle nil
+    :watch/formatter nil
     :watch/pattern #"[^.].*(\.clj|\.edn)$"
     :watch/timestamp "[hh:mm:ss]"
-    :watch/formatter nil
 
+    :env/first-start? true
     :env/paths ["src" "test" "dev" "resources" "dev/src" "dev/resources"]
     :env/start-on-init? false
     :env/load-runtime? false
@@ -44,9 +47,7 @@
 
 (defn ^:private notify [key]
   (when-let [formatter (@state :watch/formatter)]
-    (->> (.format formatter (java.util.Date.))
-         (format "\n%s %s" key)
-         (println))))
+    (println key (.format formatter (java.util.Date.)))))
 
 (defn ^:private ig-prep-fn []
   (let [{:integrant/keys [file-path profiles] :env/keys [duct?]} @state
@@ -56,6 +57,14 @@
           (duct/read-config)
           (duct/prep-config profiles))
       (slurp resource))))
+
+(defn ^:private get-watch-handler
+  [on-change]
+  (letfn [(filter [_ {:keys [file]}]
+            (re-matches (@state :watch/pattern) (.getName file)))
+          (handler [ctx _]
+            (binding [*ns* *ns*] (on-change) ctx))]
+    (hawk/watch! [{:paths (@state :watch/paths) :filter filter :handler handler}])))
 
 (defn init
   "Process user options and prepare dev environment:
@@ -69,16 +78,17 @@
   ([] (init nil))
   ([config]
    (let [{:integrant/keys [file-path with-duct?]
-          :env/keys [start-on-init?]
-          :watch/keys [timestamp] :as s} (merge-state! config)]
-     (merge-state!
-      {:dev/integrant? (some? file-path)
-       :dev/duct? (and with-duct? file-path)
-       :dev/local-clj (io/resource "local.clj")
-       :watch/paths #(or (:watch/paths s) (:env/paths s))
-       :watch/formatter (get-time-formatter timestamp)})
-     (when start-on-init?
-       (start)))))
+          :env/keys [start-on-init?] :as s} (merge-state! config)
+         integrant? (some? file-path)]
+     (merge-state! {:dev/integrant? integrant?
+                    :dev/duct? (and with-duct? integrant?)
+                    :dev/local-clj (io/resource "local.clj")
+                    :watch/paths #(or (:watch/paths s) (:env/paths s))
+                    :watch/formatter (get-time-formatter (s :watch/timestamp))})
+     (when integrant? (ig-repl/set-prep! ig-prep-fn))
+     (when start-on-init? (start))
+     (notify :environment/initialized)
+     (apply tn/set-refresh-dirs (:env/paths s)))))
 
 (defn start
   "Start development environment:
@@ -89,27 +99,26 @@
   - when local.clj execute it "
   []
   (when-not (:env/started? @state)
-    (let [{:env/keys [paths duct? integrant? local-clj load-runtime?]} @state]
-      (notify :environment/starting)
-      (apply tn/set-refresh-dirs paths)
-      (when duct?
-        (duct/load-hierarchy))
-      (when load-runtime?
-        (tn/refresh-all))
-      (when local-clj
-        (load local-clj))
-      (when integrant?
-        (ig-repl/set-prep! ig-prep-fn)
-        (ig-repl/init)
-        (ig-repl/go))
-      (swap! state assoc :env/started? true)
+    (let [{:env/keys [duct? integrant? local-clj load-runtime? first-start?]} @state]
+      (when duct? (duct/load-hierarchy))
+      (when (and load-runtime? first-start?) (tn/refresh-all))
+      (when integrant? (ig-repl/init) (ig-repl/go))
+      (when local-clj (load local-clj))
+      (swap! state merge {:env/started? true :env/first-start? false})
       (notify :environment/started!))))
 
 (defn pause
   "Pause development environment
   - if watch is enabled, stop watching for changes
   - if integrant/duct then suspend system."
-  [])
+  ([] (pause true :environment/paused!))
+  ([keep-watching? msg-key]
+   (let [{:env/keys [integrant? started?]} @state]
+     (when started?
+       (when-not keep-watching? (watch :stop))
+       (when integrant? (ig-repl/suspend))
+       (swap! state assoc :env/started? false)
+       (notify msg-key)))))
 
 (defn resume
   "Resume after pausing environment. (if watch is enabled, then re-watch)"
@@ -124,8 +133,25 @@
   [])
 
 (defn watch
-  "Start/Stop hot-reloading"
+  "Start/Stop hot-reloading. To stop, pass :stop to watch"
   ([] (watch :start))
-  ([op]))
+  ([op]
+   (let [{:watch/keys [handle] :env/keys [started?]} @state]
+     (case op
+       :start
+       (if handle
+         (notify :environment/already-watching!!)
+         (do (when-not started? (start))
+             (->> (get-watch-handler
+                   #(do (pause false :watch/reload!)
+                        (tn/refresh :after 'devenv.core/resume)))
+                  (swap! state assoc :watch/handle))
+             (notify :environment/watching!)))
+       :stop
+       (if-not handle
+         (notify :environment/no-watching-process)
+         (do (hawk/stop! handle)
+             (swap! state dissoc :watch/handle)
+             (notify :environment/stopped-watching!)))))))
 
 (run-tests)
