@@ -1,7 +1,21 @@
 (ns tami5.devenv
   (:require [clojure.test :refer [are run-tests]]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.tools.namespace.repl :as tn]
+            [integrant.repl.state :as ig-state]
+            [integrant.repl :as ig-repl]
+            [duct.core :as duct]
+            [potemkin :as potemkin]))
 
+;; re-export (system & config) intergrant state
+(declare system config)
+(potemkin/import-vars [ig-state system config])
+ig-state/system
+
+;; Stop this namespace from being reloaded.
+(tn/disable-reload! (find-ns 'tami5.devenv))
+
+;; Set Initial State
 (def ^:private state
   (atom
    {:integrant/profiles nil
@@ -29,6 +43,21 @@
 (defn ^:private get-time-formatter [timestamp]
   (when timestamp (java.text.SimpleDateFormat. timestamp)))
 
+(defn ^:private notify [key]
+  (when-let [formatter (@state :watch/formatter)]
+    (->> (.format formatter (java.util.Date.))
+         (format "\n%s %s" key)
+         (println))))
+
+(defn ^:private ig-prep-fn []
+  (let [{:integrant/keys [file-path profiles] :env/keys [duct?]} @state
+        resource (io/resource file-path)]
+    (if duct?
+      (-> resource
+          (duct/read-config)
+          (duct/prep-config profiles))
+      (slurp resource))))
+
 (defn init
   "Process user options and prepare dev environment:
   if no configuration is given, then defaults will be used."
@@ -55,8 +84,23 @@
   - integrant?, run integrant.core/set-prep!
   - integrant?, read configuration in integrant.core/set-prep!
   - duct?, read configuration and prepare with profiles
-  - local-clj?, execute it "
-  [])
+  - when local.clj execute it "
+  []
+  (when-not (:env/started? @state)
+    (let [{:env/keys [paths duct? integrant? local-clj load-runtime?]} @state]
+      (notify :environment/starting)
+      (apply tn/set-refresh-dirs paths)
+      (when duct?
+        (duct/load-hierarchy))
+      (when load-runtime?
+        (tn/refresh-all))
+      (when local-clj
+        (load local-clj))
+      (when integrant?
+        (ig-repl/set-prep! ig-prep-fn)
+        (ig-repl/init)
+        (ig-repl/go))
+      (notify :environment/started!))))
 
 (defn pause
   "Pause development environment
