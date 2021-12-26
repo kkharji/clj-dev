@@ -9,7 +9,7 @@
             [hawk.core :as hawk]))
 
 ;; re-export (system & config) intergrant state
-(declare system config start watch)
+(declare system config start watch pause)
 (potemkin/import-vars
  [integrant.repl.state system config])
 
@@ -58,13 +58,18 @@
           (duct/prep-config profiles))
       (slurp resource))))
 
-(defn ^:private get-watch-handler
-  [on-change]
+(defn ^:private get-watch-handler [pattern paths]
   (letfn [(filter [_ {:keys [file]}]
-            (re-matches (@state :watch/pattern) (.getName file)))
+            (re-matches pattern (.getName file)))
+          (on-change []
+            (pause false :watch/reload!)
+            (tn/refresh :after 'devenv.core/resume))
           (handler [ctx _]
             (binding [*ns* *ns*] (on-change) ctx))]
-    (hawk/watch! [{:paths (@state :watch/paths) :filter filter :handler handler}])))
+    (hawk/watch! [{:paths paths :filter filter :handler handler}])))
+
+(def ^:private update-watch-handle
+  (partial swap! state assoc :watch/handle))
 
 (defn init
   "Process user options and prepare dev environment:
@@ -80,11 +85,12 @@
    (let [{:integrant/keys [file-path with-duct?]
           :env/keys [start-on-init?] :as s} (merge-state! config)
          integrant? (some? file-path)]
-     (merge-state! {:dev/integrant? integrant?
-                    :dev/duct? (and with-duct? integrant?)
-                    :dev/local-clj (io/resource "local.clj")
-                    :watch/paths #(or (:watch/paths s) (:env/paths s))
-                    :watch/formatter (get-time-formatter (s :watch/timestamp))})
+     (merge-state!
+      {:dev/integrant? integrant?
+       :dev/duct? (and with-duct? integrant?)
+       :dev/local-clj (io/resource "local.clj")
+       :watch/paths #(or (:watch/paths s) (:env/paths s))
+       :watch/formatter (get-time-formatter (s :watch/timestamp))})
      (when integrant? (ig-repl/set-prep! ig-prep-fn))
      (when start-on-init? (start))
      (notify :environment/initialized)
@@ -136,22 +142,19 @@
   "Start/Stop hot-reloading. To stop, pass :stop to watch"
   ([] (watch :start))
   ([op]
-   (let [{:watch/keys [handle] :env/keys [started?]} @state]
-     (case op
-       :start
-       (if handle
-         (notify :environment/already-watching!!)
-         (do (when-not started? (start))
-             (->> (get-watch-handler
-                   #(do (pause false :watch/reload!)
-                        (tn/refresh :after 'devenv.core/resume)))
-                  (swap! state assoc :watch/handle))
-             (notify :environment/watching!)))
-       :stop
-       (if-not handle
-         (notify :environment/no-watching-process)
-         (do (hawk/stop! handle)
-             (swap! state dissoc :watch/handle)
-             (notify :environment/stopped-watching!)))))))
+   (let [{:watch/keys [handle pattern paths] :env/keys [started?]} @state
+         [start? stop?] [(= op :start) (= op :stop)]
+         case* (cond (and handle stop?) :stop
+                     (and (not handle) start?) :start
+                     (and (not handle) stop?) :environment/no-watching-process
+                     (and handle start?) :environment/already-watching!!)]
+     (case case*
+       :start (do (when-not started? (start))
+                  (update-watch-handle (get-watch-handler pattern paths))
+                  (notify :environment/watching!))
+       :stop  (do (hawk/stop! handle)
+                  (update-watch-handle nil)
+                  (notify :environment/stopped-watching!))
+       (notify case*)))))
 
 (run-tests)
