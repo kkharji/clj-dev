@@ -29,11 +29,11 @@
     :watch/formatter nil
     :watch/pattern #"[^.].*(\.clj|\.edn)$"
     :watch/timestamp "[hh:mm:ss]"
+    :watch/initialized? false
 
     :env/first-start? true
     :env/paths ["src" "test" "dev" "resources" "dev/src" "dev/resources"]
     :env/start-on-init? false
-    :env/load-runtime? false
     :env/duct? false
     :env/integrant? false
     :env/local-clj false
@@ -62,7 +62,7 @@
   (letfn [(filter [_ {:keys [file]}]
             (re-matches pattern (.getName file)))
           (on-change []
-            (pause false :watch/reload!)
+            (pause :watch/reload!)
             (tn/refresh :after 'devenv.core/resume))
           (handler [ctx _]
             (binding [*ns* *ns*] (on-change) ctx))]
@@ -76,9 +76,9 @@
   if no configuration is given, then defaults will be used."
   {:test
    #(are [lhs rhs] [lhs (some? (get (init rhs) (first lhs)))]
-      [:dev/integrant? true] {:integrant/file-path "..."}
-      [:dev/duct? true] {:integrant/with-duct? true :integrant/file-path "...."}
-      [:dev/duct? false] {:integrant/with-duct? true}
+      [:env/integrant? true] {:integrant/file-path "..."}
+      [:env/duct? true] {:integrant/with-duct? true :integrant/file-path "...."}
+      [:env/duct? false] {:integrant/with-duct? true}
       [:watch/paths true] nil)}
   ([] (init nil))
   ([config]
@@ -86,57 +86,98 @@
           :env/keys [start-on-init?] :as s} (merge-state! config)
          integrant? (some? file-path)]
      (merge-state!
-      {:dev/integrant? integrant?
-       :dev/duct? (and with-duct? integrant?)
-       :dev/local-clj (io/resource "local.clj")
+      {:env/integrant? integrant?
+       :env/duct? (and with-duct? integrant?)
+       :env/initialized? true
+       :env/local-clj (io/resource "local.clj")
        :watch/paths #(or (:watch/paths s) (:env/paths s))
        :watch/formatter (get-time-formatter (s :watch/timestamp))})
      (when integrant? (ig-repl/set-prep! ig-prep-fn))
-     (when start-on-init? (start))
-     (notify :environment/initialized)
-     (apply tn/set-refresh-dirs (:env/paths s)))))
+     (apply tn/set-refresh-dirs (:env/paths s))
+     (notify :environment/initialized!)
+     (when start-on-init? (start)))))
 
 (defn start
   "Start development environment:
   - set clojure.tools.namespace.repl/refresh-dirs.
   - integrant?, run integrant.core/set-prep!
   - integrant?, read configuration in integrant.core/set-prep!
-  - duct?, read configuration and prepare with profiles
-  - when local.clj execute it "
-  []
-  (when-not (:env/started? @state)
-    (let [{:env/keys [duct? integrant? local-clj load-runtime? first-start?]} @state]
-      (when duct? (duct/load-hierarchy))
-      (when (and load-runtime? first-start?) (tn/refresh-all))
-      (when integrant? (ig-repl/init) (ig-repl/go))
-      (when local-clj (load local-clj))
-      (swap! state merge {:env/started? true :env/first-start? false})
-      (notify :environment/started!))))
-
-(defn pause
-  "Pause development environment
-  - if watch is enabled, stop watching for changes
-  - if integrant/duct then suspend system."
-  ([] (pause true :environment/paused!))
-  ([keep-watching? msg-key]
-   (let [{:env/keys [integrant? started?]} @state]
-     (when started?
-       (when-not keep-watching? (watch :stop))
-       (when integrant? (ig-repl/suspend))
-       (swap! state assoc :env/started? false)
+  - duct?, read configuration and prepare with :integrant/profiles
+  - when local.clj exists, execute it
+  - start-watch?, start watching proceess as well"
+  ([]
+   (start :environment/started! false))
+  ([start-watch?]
+   (start :environment/started! start-watch?))
+  ([msg-key start-watch?]
+   (when-not (:env/started? @state)
+     (when-not (:env/initialized? @state)
+       (init))
+     (let [{:env/keys [duct? integrant? local-clj]} @state]
+       (when duct? (duct/load-hierarchy))
+       (tn/refresh-all)
+       (when integrant? (ig-repl/init) (ig-repl/go))
+       (when local-clj (load local-clj))
+       (swap! state assoc {:env/started? true})
+       (when start-watch? (watch :start))
        (notify msg-key)))))
 
-(defn resume
-  "Resume after pausing environment. (if watch is enabled, then re-watch)"
-  [])
-
 (defn stop
-  "Stop development environment."
-  [])
+  "Stop development environment. clear state"
+  ([]
+   (stop :environment/stoped! true))
+  ([stop-watch?]
+   (stop :environment/stoped! stop-watch?))
+  ([msg-key stop-watch?]
+   (let [{:keys [env/integrant? env/started? watch/handle]} @state]
+     (if started?
+       (do (when integrant?  (ig-repl/halt))
+           (when (and stop-watch? handle) (watch :stop))
+           (swap! state assoc :env/started? false)
+           (tn/clear)
+           (when msg-key (notify msg-key)))
+       (when msg-key (notify :environment/already-stopped!))))))
 
 (defn restart
   "Restart development environment."
-  [])
+  ([]
+   (restart false))
+  ([restart-watch?]
+   (stop nil restart-watch?)
+   (start :environment/restarted! restart-watch?)))
+
+(defn pause
+  "Pause development environment"
+  ([]
+   (pause :environment/paused!))
+  ([msg-key]
+   (let [{:env/keys [integrant? started?]} @state]
+     (if started?
+       (do (when integrant? (ig-repl/suspend))
+           (swap! state assoc :env/paused? true)
+           (when msg-key (notify msg-key)))
+       (notify :environment/run-start-first)))))
+
+(defn resume
+  "Resume after pausing environment."
+  ([]
+   (resume :environment/resumed!))
+  ([msg-key]
+   (let [{:keys [env/integrant? env/paused?]} @state]
+     (if paused?
+       (do (when integrant? (ig-repl/resume))
+           (when msg-key (notify msg-key)))
+       (notify :environment/run-pause-first)))))
+
+(defn refresh
+  "Runs pause and then resume, while in the same running refreshing files with
+  clojrue.tools.namespace/refresh"
+  []
+  (if (@state :env/started?)
+    (do (pause nil)
+        (tn/refresh)
+        (resume :environment/refreshed!))
+    (notify :environment/run-start-first)))
 
 (defn watch
   "Start/Stop hot-reloading. To stop, pass :stop to watch"
