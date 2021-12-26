@@ -10,6 +10,8 @@ Mostly used to quickly setup my development environment with/without integrant/d
 ```clojure
 {:env/paths ;; Runtime Paths
  ["src" "test" "dev" "resources" "dev/src" "dev/resources"]
+ :env/auto-start? false ;; Whether to auto-start i.e. when calling devenv/init, call devenv/start
+ :env/load-runtime? false ;; Whether to scans source code directories and loads them in dependency order at startup
 
  ;; Watch Configuration
  :watch/paths nil ;; directories to watch for changes. default to :env/paths
