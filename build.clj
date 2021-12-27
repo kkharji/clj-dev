@@ -4,7 +4,7 @@
             [org.corfield.build :as bb]))
 
 (def lib 'net.clojars.tami5/devenv)
-(def version (format "1.0.%s" (b/git-count-revs nil)))
+(def version "0.1.0")
 
 (defn test "Run the tests." [opts]
   (bb/run-tests opts))

@@ -1,4 +1,4 @@
-{:paths ["src" "resources"]
+{:paths ["src" "resources" "dev/src"]
  :deps {org.clojure/clojure {:mvn/version "1.10.3"}
         integrant/integrant {:mvn/version "0.8.0"}
         duct/core           {:mvn/version "0.8.0"}
