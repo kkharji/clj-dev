@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>net.clojars.tami5/devenv</groupId>
+  <groupId>tami5</groupId>
   <artifactId>devenv</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
-  <name>tami5/devenv</name>
+  <version>0.1.0</version>
+  <name>devenv</name>
   <description>Configuration-driven clojure development environment</description>
   <url>https://github.com/tami5/clj-devenv</url>
   <licenses>
