@@ -57,7 +57,8 @@
            (when should-watch (watch :stop))
            (log msg)
            (repl/clear)
-           (alt s/started? false))
+           (alt s/started? false)
+           nil)
        (log :no-env-running)))))
 
 (defn restart

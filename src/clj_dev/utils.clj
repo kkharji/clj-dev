@@ -13,9 +13,7 @@
 
 (defn log [key]
   (when key
-    (some->>
-     (get-timestamp)
-     (println (keyword "environment" (name key)) "\n"))))
+    (println (str (get-timestamp) " ===============================\n" (keyword "environment" (name key))))))
 
 (defn set-integrant-prep! []
   (igr/set-prep!
