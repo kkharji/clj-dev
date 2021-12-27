@@ -44,24 +44,27 @@ often changes as time passes.
 
 (comment
   ;; Map of current state. Most likely would be only integrant state.
-  (system)
+  system
   ;; Set refresh-dirs, start state, load local.clj if it exists.
   ;; Pass true as first argument to start watch process.
-  ;; alias: go
+  ;; Alias: go
   (start)
   ;; Stop the development environment, clear state and namespace tracker.
   ;; Pass false as first argument to keep current watch job running if any.
-  ;; alias: halt!, halt
+  ;; Alias: halt!, halt
   (stop)
-  ;; Restart development environment by running (stop) and start.  Pass true
-  ;; as first argument to restart watch job too.
-  ;; alias: reset-all
+  ;; Restart development environment by running (stop) and start.
+  ;; Pass true as first argument to restart watch job too.
+  ;; Alias: reset-all
   (restart)
   ;; Pause state, "only effective with state management".
   ;; alias: suspend
   (pause)
   ;; Resume state after pausing, "only effective with state management".
   (resume)
+  ;; Refresh development environment by running (pause) and (start).
+  ;; alias: reset
+  (refrsh)
   ;; Start watching `:watch-paths` for changes. If development environment
   ;; isn't started yet, then run (start).
   (watch)
@@ -90,18 +93,18 @@ often changes as time passes.
  :start-on-init? false ;;
 
  ;; Directories to watch for changes. default to :paths
- :watch-paths nil
+ :watch-paths nil ;; vector
  ;; File patterns to trigger reload on.
  :watch-pattern #"[^.].*(\.clj|\.edn)$"
  ;; time stamp format, set to nil if you don't want have timestamp.
  :watch-timestamp "[hh:mm:ss]"
 
  ;; Integrant file configuration path within :paths.
- :integrant-file-path nil
+ :integrant-file-path nil ;; string
  ;; integrant profiles.
- :integrant-profiles nil
+ :integrant-profiles nil ;; vector
  ;; Whether duct framework should be considered.
- :integrant-with-duct? nil}
+ :integrant-with-duct? nil} ;; boolean
 ```
 
 ## License

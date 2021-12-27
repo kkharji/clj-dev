@@ -112,3 +112,10 @@
            :else (case operation
                    :start (log :already-watching!!)
                    :stop (log :no-watching-process))))))
+
+(def go start)
+(def halt stop)
+(def halt! stop)
+(def suspend pause)
+(def reset-all restart)
+(def reset refresh)
