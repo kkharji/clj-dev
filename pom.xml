@@ -2,11 +2,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>tami5</groupId>
-  <artifactId>devenv</artifactId>
+  <artifactId>clj-dev</artifactId>
   <version>0.1.0</version>
-  <name>devenv</name>
-  <description>Configuration-driven clojure development environment</description>
-  <url>https://github.com/tami5/clj-devenv</url>
+  <name>clj-dev</name>
+  <description>Data-driven clojure development environment</description>
+  <url>https://github.com/tami5/clj-dev</url>
   <licenses>
     <license>
       <name>Eclipse Public License</name>
@@ -19,9 +19,9 @@
     </developer>
   </developers>
   <scm>
-    <url>https://github.com/tami5/clj-devenv</url>
-    <connection>scm:git:git://github.com/tami5/clj-devenv.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/tami5/clj-devenv.git</developerConnection>
+    <url>https://github.com/tami5/clj-dev</url>
+    <connection>scm:git:git://github.com/tami5/clj-dev.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/tami5/clj-dev.git</developerConnection>
     <tag>0.1.0</tag>
   </scm>
   <dependencies>

@@ -1,6 +1,6 @@
-(ns devenv.watch
-  (:require [devenv.state :as s :refer [config]]
-            [devenv.utils :as u :refer [log]]
+(ns clj-dev.watch
+  (:require [clj-dev.state :as s :refer [config]]
+            [clj-dev.utils :as u :refer [log]]
             [hawk.core :as hawk]))
 
 (defn- filter-fn [_ {:keys [file]}]

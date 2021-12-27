@@ -3,7 +3,7 @@
   (:require [clojure.tools.build.api :as b] ; for b/git-count-revs
             [org.corfield.build :as bb]))
 
-(def lib 'tami5/devenv)
+(def lib 'tami5/clj-dev)
 (def version "0.1.0")
 
 (defn test "Run the tests." [opts]

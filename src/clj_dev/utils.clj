@@ -1,5 +1,5 @@
-(ns devenv.utils
-  (:require [devenv.state :as s]
+(ns clj-dev.utils
+  (:require [clj-dev.state :as s]
             [clojure.java.io :as io]
             [duct.core :as duct]
             [clojure.tools.namespace.repl :as repl]
@@ -15,7 +15,7 @@
   (when key
     (some->>
      (get-timestamp)
-     (println (keyword "environment" (name key))))))
+     (println (keyword "environment" (name key)) "\n"))))
 
 (defn set-integrant-prep! []
   (igr/set-prep!

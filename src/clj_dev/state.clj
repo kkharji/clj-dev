@@ -1,11 +1,11 @@
-(ns devenv.state
+(ns clj-dev.state
   (:require [clojure.tools.namespace.repl :as tn]))
 
 (defmacro alt [root-var fun]
   `(let [fun# (if (fn? ~fun) ~fun (constantly ~fun))]
      (alter-var-root (var ~root-var) fun#)))
 
-(tn/disable-reload! (find-ns 'devenv.state))
+(tn/disable-reload! (find-ns 'clj-dev.state))
 
 (def start-on-init? false)
 (def duct? false)

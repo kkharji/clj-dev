@@ -1,11 +1,10 @@
-# clj-devenv
+# clj-dev
+> Data-driven clojure development environment.
 
-configuration-driven clojure development environment.
-
-The objective of `clj-devenv` is to minimize the complexity of managing
+The objective of `clj-dev` is to minimize the complexity of managing clojure
 development environments and keeping `user.clj` clean. Templating and
-bootstrapping is bad idea for managing development environment because it's
-often changes as time passes.
+bootstrapping is bad idea for maintaining consistent development environments.
+
 
 ## Status
 
@@ -33,14 +32,15 @@ often changes as time passes.
 
 ```clojure
 (ns user
- (:require [devenv.core]
-           [potemkin]))
+ (:require [clj-dev.core :as d]
+           [potemkin :as p]))
 
-(potemkin/import-vars ;; expose api functions in user namespace. (e.g. user/start )
- [devenv.core init start pause resume stop restart watch system config])
+(p/import-vars ;; expose api functions in user namespace. (e.g. user/start )
+ [clj-dev.core start pause resume stop restart watch system config])
+ ;; or aliases: go, halt, reset, reset-all
 
-;; initialized with default options
-(init)
+;; Initialized with default options
+(d/init)
 
 (comment
   ;; Map of current state. Most likely would be only integrant state.
@@ -79,9 +79,15 @@ often changes as time passes.
                       "[cider.nrepl/cider-middleware]" "--interactive"]
         :extra-paths ["test" "dev/src"]
         :extra-deps  {cider/cider-nrepl {:mvn/version "0.27.2"}
-                      tami5/devenv      {:mvn/version "0.1.0"}}}}
+                      tami5/clj-dev     {:mvn/version "0.1.0"}}}}
 ```
 
+
+### 3. Use
+```
+user => (user/start) ;; or (start)
+user => (user/stop) ;; or (stop)
+```
 
 ## Default Options
 
@@ -89,7 +95,7 @@ often changes as time passes.
 {;; By default only watch and namespace reload and refresh works
  ;; Paths to target for refresh & tests
  :paths ["src" "test" "dev" "resources" "dev/src" "dev/resources"]
- ;; Whether to auto-start i.e. when calling devenv/init, call devenv/start
+ ;; Whether to auto-start i.e. when calling clj-dev/init, call clj-dev/start
  :start-on-init? false ;;
 
  ;; Directories to watch for changes. default to :paths

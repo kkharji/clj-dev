@@ -1,17 +1,17 @@
-(ns devenv.core
-  (:require [clojure.java.io :as io]
+(ns clj-dev.core
+  (:require [clj-dev.state :as s :refer [alt]]
+            [clj-dev.utils :as u :refer [log]]
+            [clj-dev.watch :as watch]
+            [clojure.java.io :as io]
             [clojure.tools.namespace.repl :as repl]
-            [devenv.state :as s :refer [alt]]
-            [devenv.utils :as u :refer [log]]
             [duct.core :as duct]
             [integrant.repl :as igr]
             [integrant.repl.state]
-            [potemkin :as potemkin]
-            [devenv.watch :as watch]))
+            [potemkin :as potemkin]))
 
-(repl/disable-reload! (find-ns 'devenv.core))
+(repl/disable-reload! (find-ns 'clj-dev.core))
 (declare system start watch pause)
-(potemkin/import-vars [integrant.repl.state system])
+(potemkin/import-vars [integrant.repl.state system config])
 
 (defn init
   "Process user options and prepare dev environment:
@@ -98,7 +98,7 @@
 
 (defn on-change []
   (pause :reload!)
-  (repl/refresh :after 'devenv.core/resume))
+  (repl/refresh :after 'clj-dev.core/resume))
 
 (defn watch
   "Start/Stop hot-reloading. To stop, pass :stop to watch"
