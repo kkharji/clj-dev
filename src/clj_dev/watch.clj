@@ -14,7 +14,7 @@
       ctx)))
 
 (defn start [callback]
-  (let [paths (mapv #(str % "/") (config :watch-paths))
+  (let [paths (config :watch-paths)
         handler (handler-fn callback)
         arguments {:paths paths :filter filter-fn :handler handler}]
     (s/set-watch-handle! (hawk/watch! [arguments]))

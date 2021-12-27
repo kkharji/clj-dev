@@ -11,12 +11,18 @@
 
 - watch <b><a href="https://github.com/tami5/clj-dev/commit/fa8935dbe1f7fbba4fb0ed4e289045d2ca0af2cf">point to watch-paths instead of paths</a></b>
 
+## <!-- 2 -->♻️ Refactor
+
+
+
+- state <b><a href="https://github.com/tami5/clj-dev/commit/16e8da7fc6c0efb3ca566c3aa88339a4d6ed1435">process watch-paths once</a></b>
+
 ## <!-- 6 -->👷 Miscellaneous
 
 
 
 - dev <b><a href="https://github.com/tami5/clj-dev/commit/9cd6839a0cf589704ffc396cb8e90f492a513f90">add script to build and install locally</a></b>
-<dl><dd><details><summary>dev <b><a href="https://github.com/tami5/clj-dev/commit/8c3ee8dee57d7fd749f4f03763389e7571b1949a">auto-changelog generator</a></b></summary><br /><sup>Now, what's missing is a github action to automatically do that 🙈</sup></details></dd></dl>
+<dl><dd><details><summary>dev <b><a href="https://github.com/tami5/clj-dev/commit/c7455feeed86986296ac8beb479c5f010217ee36">auto-changelog generator</a></b></summary><br /><sup>Now, what's missing is a github action to automatically do that 🙈</sup></details></dd></dl>
 
 
 

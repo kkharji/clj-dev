@@ -28,8 +28,10 @@
    :integrant-with-duct? false})
 
 (defn set-state! [changs]
-  (let [{:keys [paths integrant-file-path integrant-with-duct?] :as c} (merge config changs)]
-    (alt config (update c :watch-paths #(or % paths)))
+  (let [{:keys [paths integrant-file-path integrant-with-duct?]
+         :as c} (merge config changs)
+        fix-paths #(mapv (fn [p] (str p "/")) (or % paths))]
+    (alt config (update c :watch-paths fix-paths))
     (alt integrant? (some? integrant-file-path))
     (alt duct? (and integrant? integrant-with-duct?))
     (alt initialized? true)
