@@ -1,0 +1,45 @@
+[changelog]
+body = """
+{%- set repo = "https://github.com/tami5/clj-dev" -%}\
+{% if version %}\
+    # 🎉 [{{ version }}]({{ repo }}/tree/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+    # 🔥 [Unreleased]({{ repo }})
+{% endif %}\
+
+{% for group, commits in commits | group_by(attribute="group") %}
+## {{ group | upper_first }}
+{% for scope, commits in commits | group_by(attribute="scope") %}\n
+{% for commit in commits %}
+{% if commit.breaking or commit.body %}<dl><dd><details><summary>{% else %}- {% endif %}\
+  {{ scope }} <b><a href="{{ repo }}/commit/{{ commit.id }}">{{ commit.message }}</a></b>
+  {%- if commit.breaking or commit.body %}</summary>\
+    {%- if commit.body %}<br />\
+      <sup>{{ commit.body }}</sup>{%- endif -%}\
+    {%- if commit.breaking %}<br /><br />\
+      <sup><b>BREAKING</b>: {{commit.breaking_description}}</sup>
+    {%- endif -%}
+  </details></dd></dl>\n{% endif %}
+{%- endfor %}
+{% endfor -%}
+{% endfor %}\n
+"""
+trim = false # remove the leading and trailing whitespaces from the template
+
+[git]
+commit_parsers = [
+  { message = "^feat",   group = "<!-- 0 -->✨ Features", default_scope = "global"},
+  { message = "^enh",    group = "<!-- 1 -->🌱 Enhancements", default_scope = "global"},
+  { message = "^ref",    group = "<!-- 2 -->♻️ Refactor", default_scope = "global"},
+  { message = "^fix",    group = "<!-- 3 -->🐛 Bug Fixes", default_scope = "global"},
+  { message = "^doc",    group = "<!-- 4 -->📚 Documentation", default_scope = "global"},
+  { message = "^test",   group = "<!-- 5 -->✅ Testing", default_scope = "global"},
+  { message = "^chore",  group = "<!-- 6 -->👷 Miscellaneous", default_scope = "global"},
+  { body = ".*security", group = "<!-- 7 -->🔒 Security", default_scope = "global"},
+  { message = "^chore\\(release\\): prepare for", skip = true, default_scope = "global"},
+]
+tag_pattern = "[0-9]*" # glob pattern for matching git tags
+conventional_commits = true
+filter_unconventional = false
+filter_commits = false
+
