@@ -1,0 +1,2 @@
+{:main/hello "Tokyo"
+ :main/handler {:message #ig/ref :main/hello}}

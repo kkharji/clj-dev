@@ -33,10 +33,6 @@
           (read-config)
           (prep-config)))))
 
-(defn resume-integrant []
-  (try (igr/resume)
-       (catch java.lang.AssertionError _)))
-
 (def set-refresh-dirs
   (partial apply repl/set-refresh-dirs))
 
