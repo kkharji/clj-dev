@@ -18,11 +18,12 @@
   If no configuration is given, then use defaults."
   ([] (init nil))
   ([config]
-   (let [paths (:paths (s/set-state! config))]
-     (when s/integrant? (u/set-integrant-prep!))
-     (u/set-refresh-dirs paths)
-     (log :initialized!)
-     (when s/start-on-init? (start)))))
+   (when-not s/initialized?
+     (let [paths (:paths (s/set-state! config))]
+       (when s/integrant? (u/set-integrant-prep!))
+       (u/set-refresh-dirs paths)
+       (log :initialized!)
+       (when s/start-on-init? (start))))))
 
 (defn start
   "Start development environment:
@@ -36,8 +37,8 @@
   ([start-watch?] (start :started! start-watch?))
   ([msg start-watch?]
    (if-not s/started?
-     (do (repl/refresh-all)
-         (when (not s/initialized?) (init))
+     (do (when (not s/initialized?) (init))
+         (repl/refresh-all)
          (when s/duct? (duct/load-hierarchy))
          (when s/integrant? (igr/init) (igr/go))
          (some-> (io/resource "local.clj") (load))
