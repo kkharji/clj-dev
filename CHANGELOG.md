@@ -25,9 +25,24 @@
 
 
 
+- global <b><a href="https://github.com/tami5/clj-dev/commit/a29685c2e32217101b6187d676e3880624cb9afa">isolate and test duct/integrant integration</a></b>
+- global <b><a href="https://github.com/tami5/clj-dev/commit/b77f7d6216e0f480c8441fe34801c0154dd34654">rework user notification</a></b>
+
+
+
 - state <b><a href="https://github.com/tami5/clj-dev/commit/da7ddd283de471cc6dc1099ad90a79469a2057f7">process watch-paths once</a></b>
 
+## <!-- 3 -->🐛 Bug Fixes
+
+
+
+- global <b><a href="https://github.com/tami5/clj-dev/commit/5ff11fe0f58c4c417b315cf2cd1a31d1c130983f">initializing with duct and loading local.clj</a></b>
+
 ## <!-- 6 -->👷 Miscellaneous
+
+
+
+- changelog <b><a href="https://github.com/tami5/clj-dev/commit/f02b47c6afd8e3f1841aa42223b0054ca5875bc8">update</a></b>
 
 
 
