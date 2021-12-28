@@ -7,7 +7,6 @@
 
 (tn/disable-reload! (find-ns 'clj-dev.state))
 
-(def start-on-init? false)
 (def duct? false)
 (def integrant? false)
 (def initialized? false)
@@ -35,7 +34,6 @@
     (alt integrant? (some? integrant-file-path))
     (alt duct? (and integrant? integrant-with-duct?))
     (alt initialized? true)
-    (alt start-on-init? (c :start-on-init?))
     config))
 
 (def watch-handle nil)
