@@ -4,7 +4,8 @@
             [duct.core :as duct]
             [clojure.tools.namespace.repl :as repl]
             [integrant.repl :as igr]
-            [clojure.pprint :as pprint]))
+            [clojure.pprint :as pprint]
+            [integrant.core :as ig]))
 
 (defn- get-timestamp []
   (some-> :watch-timestamp
@@ -23,11 +24,14 @@
 
 (defn set-integrant-prep! []
   (igr/set-prep!
-   #(if-let [resource (println (io/resource (s/config :integrant-file-path)))]
-      (if-not s/duct?
-        (slurp resource)
-        (-> (duct/read-config resource)
-            (duct/prep-config (s/config :integrant-profiles)))))))
+   #(let [profiles (s/config :integrant-profiles)
+          read-config (if s/duct? duct/read-config (comp slurp ig/read-string))
+          prep-config (if s/duct? (fn [c] (duct/prep-config c profiles)) ig/prep)]
+      (-> :integrant-file-path
+          (s/config)
+          (io/resource)
+          (read-config)
+          (prep-config)))))
 
 (defn resume-integrant []
   (try (igr/resume)
