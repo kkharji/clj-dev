@@ -11,11 +11,21 @@
 
 - watch <b><a href="https://github.com/tami5/clj-dev/commit/fa8935dbe1f7fbba4fb0ed4e289045d2ca0af2cf">point to watch-paths instead of paths</a></b>
 
+## <!-- 1 -->🌱 Enhancements
+
+
+
+- core <b><a href="https://github.com/tami5/clj-dev/commit/e3e8c4f08b54ad3973452c760cb932b27db61de3">run init function only once</a></b>
+
+
+
+- util <b><a href="https://github.com/tami5/clj-dev/commit/a8f1cc35a4f5084bdb6eb62bbf79e2defcb18d35">optional log without timestamp</a></b>
+
 ## <!-- 2 -->♻️ Refactor
 
 
 
-- state <b><a href="https://github.com/tami5/clj-dev/commit/16e8da7fc6c0efb3ca566c3aa88339a4d6ed1435">process watch-paths once</a></b>
+- state <b><a href="https://github.com/tami5/clj-dev/commit/da7ddd283de471cc6dc1099ad90a79469a2057f7">process watch-paths once</a></b>
 
 ## <!-- 6 -->👷 Miscellaneous
 
