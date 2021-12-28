@@ -34,7 +34,7 @@
     (if (io/resource integrant-file-path)
       (do (prep s/duct? integrant-file-path integrant-profiles)
           (when-not s/duct? (repl/prep) (repl/init))
-          (u/log :environment/initialized-integrant false))
+          (u/log (if s/duct? :using-integrant :using-duct) false))
       (u/error :resource-not-found integrant-file-path))))
 
 (defn start []

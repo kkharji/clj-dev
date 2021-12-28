@@ -14,6 +14,8 @@
  [integrant system config])
 
 (declare start watch pause)
+(defn ret [msg]
+  (when msg (keyword "env" (if (string? msg) msg (name msg)))))
 
 (defn init
   "Process user options and prepare dev environment:
@@ -21,11 +23,12 @@
   ([] (init nil))
   ([config]
    (when-not s/initialized?
+     (u/stamp "Initializing Dev environment")
      (let [{:keys [start-on-init? paths]} (s/set-state! config)]
        (if s/integrant? (integrant/init))
        (u/set-refresh-dirs paths)
-       (log :initialized!)
-       (when start-on-init? (start))))))
+       (when start-on-init? (start))
+       (ret :initialized!)))))
 
 (defn start
   "Start development environment:
@@ -35,16 +38,17 @@
   - duct?, read configuration and prepare with :integrant/profiles
   - when local.clj exists, execute it
   - start-watch?, start watching proceess as well"
-  ([] (start :started! false))
+  ([] (start "started!" false))
   ([start-watch?] (start :started! start-watch?))
   ([msg start-watch?]
-   (if (or (not s/started?) s/initialized?)
+   (when msg (u/stamp "Starting Dev Environment"))
+   (if (and (not s/started?) s/initialized?)
      (do (repl/refresh-all)
          (when s/integrant? (integrant/start))
          (when (io/resource "local.clj") (load "local"))
          (alt s/started? true)
          (when start-watch? (watch))
-         (log msg))
+         (ret msg))
      (log (if s/started?
             :already-started!
             :run-init-first)))))
@@ -56,67 +60,84 @@
   ([msg stop-watch]
    (let [should-watch (and stop-watch s/watching?)]
      (if s/started?
-       (do (when s/integrant? (integrant/stop))
+       (do (when msg (u/stamp "Stopping Dev Environment"))
+           (when s/integrant? (integrant/stop))
            (when should-watch (watch :stop))
-           (log msg)
            (repl/clear)
            (alt s/started? false)
-           nil)
-       (log :no-env-running)))))
+           (ret msg))
+       (ret :no-running-environment)))))
 
 (defn restart
   "Restart development environment."
   ([] (restart false))
   ([restart-watch?]
+   (u/stamp "Restarting Dev Environment")
    (stop nil restart-watch?)
-   (start :restarted! restart-watch?)))
+   (start nil restart-watch?)
+   (ret :restarted!)))
 
 (defn pause
   "Pause development environment"
   ([] (pause :paused!))
   ([msg]
+   (when msg (u/stamp "Pausing Dev Environment"))
    (if s/started?
      (do (when s/integrant? (integrant/pause))
          (alt s/paused? true)
-         (log msg))
-     (log :run-start-first))))
+         (ret msg))
+     (ret :no-env-running))))
 
 (defn resume
   "Resume after pausing environment."
   ([] (resume :resumed!))
   ([msg]
+   (when msg (u/stamp "Resuming Dev Environment"))
    (if s/paused?
      (do (when s/integrant? (integrant/resume))
          (alt s/paused? false)
-         (log msg))
-     (log :run-pause-first))))
+         (ret msg))
+     (ret :no-env-paused))))
+
+(defn -reload*
+  "internal reloading"
+  ([]
+   (u/stamp "Reloading Dev Environment")
+   (if s/paused?
+     (do (when s/integrant? (integrant/resume))
+         (alt s/paused? false))
+     (ret :no-env-paused))))
 
 (defn refresh
   "Pause, refresh changed files and resume"
   []
+  (u/stamp "Refreshing Dev Environment")
   (if s/started?
     (do (pause nil)
         (repl/refresh)
-        (resume :refreshed!))
-    (log :run-start-first)))
+        (resume nil)
+        (ret :refreshed!))
+    (ret :no-env-running)))
 
 (defn on-change []
-  (pause :reload!)
-  (repl/refresh :after 'clj-dev.core/resume))
+  (pause nil)
+  (repl/refresh :after 'clj-dev.core/-reload*)
+  (println (ret :reloaded!)))
 
 (defn watch
   "Start/Stop hot-reloading. To stop, pass :stop to watch"
   ([] (watch :start))
   ([operation]
    (when-not s/started? (start))
+   (u/stamp (if (= operation :start) "Watching Dev Environment" "Killing Watching process"))
    (let [start? (= operation :start)
          stop? (not start?)
          valid? (if start? (not s/watching?) s/watching?)]
      (cond (and start? valid?) (watch/start on-change)
            (and stop? valid?)  (watch/stop)
            :else (case operation
-                   :start (log :already-watching!!)
-                   :stop  (log :no-watching-process))))))
+                   :start (ret :already-watching!!)
+                   :stop  (ret :no-watching-process))))))
 
 (def go start)
 (def halt stop)

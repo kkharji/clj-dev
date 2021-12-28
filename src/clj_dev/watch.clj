@@ -18,9 +18,9 @@
         handler (handler-fn callback)
         arguments {:paths paths :filter filter-fn :handler handler}]
     (s/set-watch-handle! (hawk/watch! [arguments]))
-    (log :started-watch-process!)))
+    :watch/started!))
 
 (defn stop []
   (hawk/stop! s/watch-handle)
   (s/set-watch-handle! nil)
-  (log :stopped-watch-process!))
+  :watch/stopped!)

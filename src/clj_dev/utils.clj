@@ -1,11 +1,7 @@
 (ns clj-dev.utils
   (:require [clj-dev.state :as s]
-            [clojure.java.io :as io]
-            [duct.core :as duct]
-            [clojure.tools.namespace.repl :as repl]
-            [integrant.repl :as igr]
             [clojure.pprint :as pprint]
-            [integrant.core :as ig]))
+            [clojure.tools.namespace.repl :as repl]))
 
 (defn- get-timestamp []
   (some-> :watch-timestamp
@@ -13,25 +9,23 @@
           (java.text.SimpleDateFormat.)
           (.format (java.util.Date.))))
 
-(defn log
-  ([key] (log key true))
-  ([key with-timestamp?]
-   (let [leading (when with-timestamp?
-                   (str (get-timestamp)
-                        " ===============================\n"))]
-     (when key
-       (println (str leading (keyword "environment" (name key))))))))
+(defn stamp
+  "Print status update"
+  [msg]
+  (let [msg (str (get-timestamp) ": " msg " ...")
+        sep (apply str (repeat (count msg) "-"))]
+    (print "\n")
+    (println sep)
+    (println msg)
+    (println sep)
+    (print "\n")))
 
-(defn set-integrant-prep! []
-  (igr/set-prep!
-   #(let [profiles (s/config :integrant-profiles)
-          read-config (if s/duct? duct/read-config (comp slurp ig/read-string))
-          prep-config (if s/duct? (fn [c] (duct/prep-config c profiles)) ig/prep)]
-      (-> :integrant-file-path
-          (s/config)
-          (io/resource)
-          (read-config)
-          (prep-config)))))
+(defn log
+  ([key] (log key false))
+  ([key with-timestamp?]
+   (let [leading (when with-timestamp? (get-timestamp))]
+     (when key
+       (println (str (keyword "env" (name key)) leading))))))
 
 (def set-refresh-dirs
   (partial apply repl/set-refresh-dirs))
