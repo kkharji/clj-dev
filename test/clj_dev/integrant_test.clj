@@ -21,9 +21,9 @@
     (defmethod ig/init-key :main/hello   [_ name] (str "Hello " name))
     (defmethod ig/init-key :main/handler [_ opts] #(opts :message))
 
-    (is (= ":environment/initialized-integrant\n"
-
+    (is (= ":env/using-integrant\n"
            (with-out-str (SUT/init))))
+
     (is (= SUT/config
            (ig/read-string (slurp (io/resource (s/config :integrant-file-path))))))
 
