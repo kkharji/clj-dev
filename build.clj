@@ -1,10 +1,10 @@
 (ns build
   (:refer-clojure :exclude [test])
-  (:require [clojure.tools.build.api :as b] ; for b/git-count-revs
+  (:require [clojure.tools.build.api :as b]
             [org.corfield.build :as bb]))
 
 (def lib 'tami5/clj-dev)
-(def version "0.1.0")
+(def version "0.1.1")
 
 (defn test "Run the tests." [opts]
   (bb/run-tests opts))

@@ -1,4 +1,4 @@
-# 🔥 [Unreleased](https://github.com/tami5/clj-dev)
+# 🎉 [0.1.1](https://github.com/tami5/clj-dev/tree/0.1.1) - 2021-12-29
 
 ## <!-- 0 -->✨ Features
 
@@ -25,8 +25,8 @@
 
 
 
-- global <b><a href="https://github.com/tami5/clj-dev/commit/a29685c2e32217101b6187d676e3880624cb9afa">isolate and test duct/integrant integration</a></b>
-- global <b><a href="https://github.com/tami5/clj-dev/commit/b77f7d6216e0f480c8441fe34801c0154dd34654">rework user notification</a></b>
+- global <b><a href="https://github.com/tami5/clj-dev/commit/46d02594bbbedd7eb5b130018e5c7e6341487e34">isolate and test duct/integrant integration</a></b>
+- global <b><a href="https://github.com/tami5/clj-dev/commit/2a5fcfa8fe58dff17c98f33001731dfa410cba42">rework user notification</a></b>
 
 
 
@@ -43,12 +43,17 @@
 
 
 - changelog <b><a href="https://github.com/tami5/clj-dev/commit/f02b47c6afd8e3f1841aa42223b0054ca5875bc8">update</a></b>
+- changelog <b><a href="https://github.com/tami5/clj-dev/commit/581761d3e46515d93e26b6c0922fc5eb253814ff">update</a></b>
 
 
 
 - dev <b><a href="https://github.com/tami5/clj-dev/commit/9cd6839a0cf589704ffc396cb8e90f492a513f90">add script to build and install locally</a></b>
 <dl><dd><details><summary>dev <b><a href="https://github.com/tami5/clj-dev/commit/c7455feeed86986296ac8beb479c5f010217ee36">auto-changelog generator</a></b></summary><br /><sup>Now, what's missing is a github action to automatically do that 🙈</sup></details></dd></dl>
 
+
+
+
+- release <b><a href="https://github.com/tami5/clj-dev/commit/113f911557e92c5d560f28eef96ca5d552d5a785">0.1.1</a></b>
 
 
 # 🎉 [0.1.0](https://github.com/tami5/clj-dev/tree/0.1.0) - 2021-12-27

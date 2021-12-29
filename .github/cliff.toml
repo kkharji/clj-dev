@@ -36,7 +36,7 @@ commit_parsers = [
   { message = "^test",   group = "<!-- 5 -->✅ Testing", default_scope = "global"},
   { message = "^chore",  group = "<!-- 6 -->👷 Miscellaneous", default_scope = "global"},
   { body = ".*security", group = "<!-- 7 -->🔒 Security", default_scope = "global"},
-  { message = "^chore\\(release\\): prepare for", skip = true, default_scope = "global"},
+  { message = "^chore\\(release\\):", skip = true, default_scope = "global"},
 ]
 tag_pattern = "[0-9]*" # glob pattern for matching git tags
 conventional_commits = true
