@@ -5,6 +5,17 @@ The objective of `clj-dev` is to minimize the complexity of managing clojure
 development environments and keeping `user.clj` clean. Templating and
 bootstrapping is bad idea for maintaining consistent development environments.
 
+## Installation 
+Leiningen/Boot
+
+```clojure 
+[org.clojars.tami5/clj-dev "0.1.1"]
+```
+
+Clojure CLI/deps.edn
+```clojure
+org.clojars.tami5/clj-dev {:mvn/version "0.1.1"}
+```
 
 ## Status
 
@@ -79,7 +90,7 @@ bootstrapping is bad idea for maintaining consistent development environments.
                       "[cider.nrepl/cider-middleware]" "--interactive"]
         :extra-paths ["test" "dev/src"]
         :extra-deps  {cider/cider-nrepl {:mvn/version "0.27.2"}
-                      tami5/clj-dev     {:mvn/version "0.1.0"}}}}
+                      org.clojars.tami5     {:mvn/version "0.1.0"}}}}
 ```
 
 
