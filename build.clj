@@ -3,7 +3,7 @@
   (:require [clojure.tools.build.api :as b]
             [org.corfield.build :as bb]))
 
-(def lib 'tami5/clj-dev)
+(def lib 'kkharji/clj-dev)
 (def version "0.1.1")
 
 (defn test "Run the tests." [opts]
