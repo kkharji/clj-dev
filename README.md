@@ -9,12 +9,12 @@ bootstrapping is bad idea for maintaining consistent development environments.
 Leiningen/Boot
 
 ```clojure 
-[org.clojars.tami5/clj-dev "0.1.1"]
+[org.clojars.kkharji/clj-dev "0.1.1"]
 ```
 
 Clojure CLI/deps.edn
 ```clojure
-org.clojars.tami5/clj-dev {:mvn/version "0.1.1"}
+org.clojars.kkharji/clj-dev {:mvn/version "0.1.1"}
 ```
 
 ## Status
@@ -90,7 +90,7 @@ org.clojars.tami5/clj-dev {:mvn/version "0.1.1"}
                       "[cider.nrepl/cider-middleware]" "--interactive"]
         :extra-paths ["test" "dev/src"]
         :extra-deps  {cider/cider-nrepl {:mvn/version "0.27.2"}
-                      org.clojars.tami5     {:mvn/version "0.1.0"}}}}
+                      org.clojars.kkharji     {:mvn/version "0.1.0"}}}}
 ```
 
 
@@ -126,6 +126,6 @@ user => (user/stop) ;; or (stop)
 
 ## License
 
-Copyright © 2021 tami5
+Copyright © 2021 kkharji
 
 Distributed under the Eclipse Public License version 1.0.
